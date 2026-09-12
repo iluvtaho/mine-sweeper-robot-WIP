@@ -83,7 +83,7 @@ To optimize the search algorithm and minimize the time required to clear all 5 t
 
 ### 3rd Trial:
 
-[*Third Trial Video*](./assets/videos/Third%20Trial%20Video%20(5x%20speed).mp4)
+[*Third Trial Video*](./assets/videos/Third%20Trial%20Video%20(5x%20Speed).mp4)
 
 * **Performance:** The robot unsuccessfully cleared the minefield. Trial took **2 minutes and 21 seconds**
 * **Trial Observation:** After upgrading two 2 18650 Li-Ion batteries, the robot worked perfectly fine for the first 1 minute. The IR sensors needed some recalibration as their detection distance was too far and would cause the robot to avoid mines that were close to the wall. After the 2 minute mark the robot seemingly lost power and froze, therefore prompting me to stop the trial. 
@@ -96,7 +96,7 @@ To optimize the search algorithm and minimize the time required to clear all 5 t
 
 ### 4th Trial:
 
-[*Fourth Trial Video*](./assets/videos/Fourth%20Trial%20Video%20(5x%20speed).mp4)
+[*Fourth Trial Video*](./assets/videos/Fourth%20Trial%20Video%20(5x%20Speed).mp4)
 
 * **Performance:** The robot successfully cleared the minefield. Trial took **1 minute and 53 seconds**
 * **Trial Observation:** The most successful trial so far. The robot didn't get caught in any "avoidance loops", lose power, or need any human interference to keep going. The only problem, however, is how the sweep isn't wide enough and it would still not detect mines despite nearly driving directly over them.
