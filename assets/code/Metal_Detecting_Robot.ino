@@ -5,98 +5,120 @@ const int motorL1 = 26;
 const int motorLS = 25;
 const int motorRS = 33;
 const int metaldetect = 5;
-const int irobstacleR = 39;
-const int irobstacleL = 36;
+const int irobstacleR = 4;
+const int irobstacleL = 2;
 const int buzzer = 13;
-String metal = "no"; // debounce
 
-unsigned long last = 0; // last direction change
-const long interval = 600; // # of milliseconds between switches
-bool direction = false; // false = turn left, true = turn right
+unsigned long lastd = 0;    // last direction change
+const long interval = 600;  // # of milliseconds between switches
+bool direction = false;     // false = turn left, true = turn right
+unsigned long lastm = 0;    // last metal detection
+const long metalt = 1500;   // # of milliseconds before metal can be detected again
+bool metal = false;         // debounce
 
 void MovementLoop() {
   digitalWrite(motorL1, HIGH);
   digitalWrite(motorL2, LOW);
-
   digitalWrite(motorR1, LOW);
   digitalWrite(motorR2, HIGH);
 
-  unsigned long current = millis(); //start timer. Use millis to allow sensing while moving because delay stops all functions
-  //check if (interval) milliseconds has passed
-  if (current - last >= interval) {
-    last = current; //reset timer
-    direction = !direction; //invert direction
+  unsigned long currentd = millis();  
+  
+  if (currentd - lastd >= interval) {
+    lastd = currentd;        
+    direction = !direction;  
   }
-  //check direction
+  
   if (direction == true) {
-    //go right
-    analogWrite(motorRS, 80);
-    analogWrite(motorLS, 170); //left motor is faster for some reason. Tried to find problem and fix but found nothing. Might be internal/inside the motor housing.. I have adjusted this so many times it hurts
+    analogWrite(motorLS, 120);  //turn right
+    analogWrite(motorRS, 0);
   } else {
-    //go left
-    analogWrite(motorRS, 255); //left motor is faster for some reason. Tried to find problem and fix but found nothing. Might be internal/inside the motor housing
-    analogWrite(motorLS, 80);
+    analogWrite(motorLS, 0);
+    analogWrite(motorRS, 150);  //turn right
   }
 }
 
 void AvoidObstacleR() {
   digitalWrite(motorL1, LOW);
   digitalWrite(motorL2, HIGH);
-
   digitalWrite(motorR1, HIGH);
   digitalWrite(motorR2, LOW);
-  analogWrite(motorRS, 150);
-  analogWrite(motorLS, 255);
-  delay(500);
-  //turn opposite direction (left)
-  analogWrite(motorRS, 255);
-  analogWrite(motorLS, 80);
+  analogWrite(motorRS, 120);
+  analogWrite(motorLS, 150);
+  delay(600);
 
-  digitalWrite(motorL1, HIGH);
-  digitalWrite(motorL2, LOW);
-
+  digitalWrite(motorL1, LOW);
+  digitalWrite(motorL2, HIGH);
   digitalWrite(motorR1, LOW);
   digitalWrite(motorR2, HIGH);
-  delay(200);
+  analogWrite(motorRS, 120);
+  analogWrite(motorLS, 150);
+  delay(300);
+  direction = false; //turn left
+  lastd = millis(); 
 }
 
 void AvoidObstacleL() {
   digitalWrite(motorL1, LOW);
   digitalWrite(motorL2, HIGH);
-
   digitalWrite(motorR1, HIGH);
   digitalWrite(motorR2, LOW);
-  analogWrite(motorRS, 255);
+  analogWrite(motorRS, 120);
   analogWrite(motorLS, 150);
-  delay(500);
-  //turn opposite direction (right)
-  analogWrite(motorRS, 80);
-  analogWrite(motorLS, 170);
+  delay(600);
 
   digitalWrite(motorL1, HIGH);
   digitalWrite(motorL2, LOW);
-
-  digitalWrite(motorR1, LOW);
-  digitalWrite(motorR2, HIGH);
-  delay(200);
+  digitalWrite(motorR1, HIGH);
+  digitalWrite(motorR2, LOW);
+  analogWrite(motorRS, 120);
+  analogWrite(motorLS, 150);
+  delay(300);
+  direction = true; //turn right
+  lastd = millis();
 }
 
 void MetalDetected() {
-  metal = "yes"; // make sure it doesn't activate again (debounce)
-  digitalWrite(motorL1, LOW);
-  digitalWrite(motorL2, LOW);
+  if (metal == false) {
+    metal = true;  
+    
+    analogWrite(motorLS, 0);
+    analogWrite(motorRS, 0);
 
-  digitalWrite(motorR1, LOW);
-  digitalWrite(motorR2, LOW);
+    analogWrite(buzzer, 10);
+    delay(2000);
+    analogWrite(buzzer, 0);
+    delay(2500);
 
-  analogWrite(buzzer, 10);
-  delay(2000);
-  analogWrite(buzzer, 0);
-  delay(2500);
+    digitalWrite(motorL1, HIGH);
+    digitalWrite(motorL2, LOW);
+    digitalWrite(motorR1, LOW);
+    digitalWrite(motorR2, HIGH);  
+    
+    for (int i = 0; i < 3; i++) {
+      analogWrite(motorLS, 120);
+      analogWrite(motorRS, 0);
+      delay(500); 
+      
+      analogWrite(motorLS, 0);
+      analogWrite(motorRS, 150);
+      delay(500);
+    }
+    
+    analogWrite(motorLS, 0);
+    analogWrite(motorRS, 0);
+    
+    lastm = millis();
+  }
+}
 
-  MovementLoop(); // move forward for 1.5 seconds
-  delay(1500);
-  metal = "no";
+void MetalCountdown() {
+  if (metal == true) {
+    unsigned long currentm = millis();
+    if ((currentm - lastm >= metalt) && (digitalRead(metaldetect) == HIGH)) { 
+      metal = false; 
+    }
+  }
 }
 
 void setup() {
@@ -110,23 +132,24 @@ void setup() {
   pinMode(buzzer, OUTPUT);
 
   pinMode(metaldetect, INPUT_PULLUP);
-  pinMode(irobstacleR, INPUT);
-  pinMode(irobstacleL, INPUT);
-  Serial.println("Ready");
+  pinMode(irobstacleR, INPUT_PULLUP); 
+  pinMode(irobstacleL, INPUT_PULLUP); 
+  Serial.println("Ready1");
 }
 
 void loop() {
+  MetalCountdown(); 
+
   int right = digitalRead(irobstacleR);
   int left = digitalRead(irobstacleL);
-
   int metald = digitalRead(metaldetect);
 
-  if (metald == LOW && metal == "no") {
+  if (metald == LOW && metal == false) {
     MetalDetected();
-  } else if (right == LOW) {
-    AvoidObstacleR();
   } else if (left == LOW) {
     AvoidObstacleL();
+  } else if (right == LOW) {
+    AvoidObstacleR();
   } else {
     MovementLoop();
   }
